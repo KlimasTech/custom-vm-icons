@@ -6,7 +6,7 @@
 <!ENTITY launch      "Settings/CustomVmIcons">
 <!ENTITY pluginURL   "https://raw.githubusercontent.com/KlimasTech/custom-vm-icons/main/custom-vm-icons.plg">
 <!ENTITY packageURL  "https://github.com/KlimasTech/custom-vm-icons/releases/download/&version;/custom-vm-icons-&version;.txz">
-<!ENTITY packageMD5  "24ce024a6d9a50d29fce48e7f00c8964">
+<!ENTITY packageMD5  "21c8c192b8ed15bb30a0102b96634d30">
 <!ENTITY pluginLOC   "/boot/config/plugins/&name;">
 <!ENTITY emhttpLOC   "/usr/local/emhttp/plugins/&name;">
 ]>
