@@ -1,0 +1,78 @@
+<?xml version='1.0' standalone='yes'?>
+<!DOCTYPE PLUGIN [
+<!ENTITY name        "custom-vm-icons">
+<!ENTITY author      "KlimasTech">
+<!ENTITY version     "2026.10.28">
+<!ENTITY launch      "Settings/CustomVmIcons">
+<!ENTITY pluginURL   "https://raw.githubusercontent.com/KlimasTech/custom-vm-icons/main/custom-vm-icons.plg">
+<!ENTITY packageURL  "https://github.com/KlimasTech/custom-vm-icons/releases/download/&version;/custom-vm-icons-&version;.txz">
+<!ENTITY packageMD5  "24ce024a6d9a50d29fce48e7f00c8964">
+<!ENTITY pluginLOC   "/boot/config/plugins/&name;">
+<!ENTITY emhttpLOC   "/usr/local/emhttp/plugins/&name;">
+]>
+
+<PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" icon="fa-picture-o">
+
+<CHANGES>
+### &version;
+- Pierwsze wydanie: wgrywanie wlasnych ikon VM (PNG/JPG, automatyczna konwersja do PNG 48x48).
+- Ikony przechowywane trwale w /mnt/user/appdata/custom-vm-icons (przezywaja restart serwera),
+  automatycznie synchronizowane do VM Managera (katalog ikon dynamix.vm.manager na /boot).
+- Automatyczne przywracanie brakujacych ikon przy starcie systemu (po zamontowaniu tablicy).
+- Strona zarzadzania: Ustawienia - Custom VM Icons (upload, podglad, usuwanie, sync/reczne przywracanie).
+</CHANGES>
+
+<!-- PRZYGOTOWANIE -->
+<FILE Run="/bin/bash">
+<INLINE>
+mkdir -p &pluginLOC;
+rm -f $(ls &pluginLOC;/*.txz 2>/dev/null)
+</INLINE>
+</FILE>
+
+<!-- INSTALACJA PACZKI -->
+<FILE Name="&pluginLOC;/custom-vm-icons-&version;.txz" Run="upgradepkg --install-new">
+<URL>&packageURL;</URL>
+<MD5>&packageMD5;</MD5>
+</FILE>
+
+<!-- POST-INSTALL: katalogi + rejestracja synchronizacji przy starcie -->
+<FILE Run="/bin/bash">
+<INLINE>
+mkdir -p /mnt/user/appdata/custom-vm-icons
+mkdir -p /boot/config/plugins/dynamix.vm.manager/templates/images
+chmod +x &emhttpLOC;/scripts/sync_icons.sh
+GO_FILE="/boot/config/go"
+MARKER="custom-vm-icons/scripts/sync_icons.sh"
+if ! grep -q "$MARKER" "$GO_FILE" 2>/dev/null; then
+  sed -i "/\/usr\/local\/sbin\/emhttp/i ( /usr/local/emhttp/plugins/custom-vm-icons/scripts/sync_icons.sh --boot 2&gt;&amp;1 ) &amp;" "$GO_FILE"
+fi
+# przywroc brakujace ikony juz teraz (jesli tablica zamontowana)
+bash &emhttpLOC;/scripts/sync_icons.sh --boot || true
+echo ""
+echo "-------------------------------------------"
+echo " custom-vm-icons &version; zainstalowany."
+echo " Zarzadzanie ikonami: Ustawienia -> Custom VM Icons"
+echo " Katalog trwaly: /mnt/user/appdata/custom-vm-icons"
+echo "-------------------------------------------"
+echo ""
+</INLINE>
+</FILE>
+
+<!-- AKTUALIZACJA -->
+<FILE Run="/bin/bash" Method="update">
+<INLINE>
+removepkg &name; 2>/dev/null
+</INLINE>
+</FILE>
+
+<!-- USUNIECIE -->
+<FILE Run="/bin/bash" Method="remove">
+<INLINE>
+sed -i '/custom-vm-icons\/scripts\/sync_icons.sh/d' /boot/config/go 2>/dev/null
+removepkg &name; 2>/dev/null
+echo "custom-vm-icons odinstalowany."
+echo "UWAGA: wgrane ikony pozostaly w /mnt/user/appdata/custom-vm-icons i w /boot/config/plugins/dynamix.vm.manager/templates/images"
+</INLINE>
+</FILE>
+</PLUGIN>

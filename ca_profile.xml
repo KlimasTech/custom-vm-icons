@@ -1,0 +1,11 @@
+<CommunityApplications>
+  <Profile>
+Custom VM Icons adds user-uploaded icons for virtual machines in the unRAID WebGUI. unRAID ships a fixed set of OS icons for the VM Manager; this plugin lets the administrator upload their own PNG/JPG logos (Proxmox, custom appliances, anything) which are automatically converted to 48x48 PNG and appear in the native icon picker when creating or editing a VM.
+
+Icons are stored persistently in the appdata share (/mnt/user/appdata/custom-vm-icons) and copied into the VM Manager icon directory at every system start, so they survive reboots and can be backed up together with the rest of appdata. No system files are patched.
+
+Maintained by KlimasTech. For support, use the GitHub issue tracker linked below.
+  </Profile>
+  <WebPage>https://github.com/KlimasTech/custom-vm-icons</WebPage>
+  <Forum>https://github.com/KlimasTech/custom-vm-icons/issues</Forum>
+</CommunityApplications>

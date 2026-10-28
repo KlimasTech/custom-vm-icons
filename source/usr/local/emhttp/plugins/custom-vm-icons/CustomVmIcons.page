@@ -1,0 +1,218 @@
+Menu="Utilities"
+Title="Custom VM Icons"
+Icon="fa-picture-o"
+---
+<?php
+$varIni = @parse_ini_file('/var/local/emhttp/var.ini');
+$csrfToken = is_array($varIni) ? ($varIni['csrf_token'] ?? '') : '';
+?>
+<style>
+#cvi-wrap { max-width: 1000px; font-family: inherit; color:#d8dee9; }
+#cvi-wrap * { box-sizing: border-box; }
+#cvi-wrap .cvi-card { background:#1b212c; border:1px solid #2a323f; border-radius:10px;
+  padding:20px 22px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,.25); }
+#cvi-wrap .cvi-card h3 { margin:0 0 14px; font-size:15px; color:#e8ecf2; font-weight:700; }
+#cvi-wrap table { width:100%; border-collapse:collapse; margin-top:10px; }
+#cvi-wrap th, #cvi-wrap td { text-align:left; padding:8px 10px; border-bottom:1px solid #2a323f; font-size:13px; }
+#cvi-wrap label { white-space:normal; max-width:100%; }
+#cvi-wrap input[type=text] { background:#11161e; border:1px solid #2a323f; border-radius:6px;
+  color:#d8dee9; padding:8px 10px; font-size:13px; width:100%; max-width:280px; }
+#cvi-wrap .cvi-btn { background:#2a323f; color:#d8dee9; border:1px solid #3a4453; border-radius:6px;
+  padding:6px 14px; font-size:13px; cursor:pointer; white-space:nowrap; }
+#cvi-wrap .cvi-btn.primary { background:#26536f; border-color:#2f6b8f; }
+#cvi-wrap .cvi-btn.del { color:#ff8080; }
+#cvi-wrap .cvi-del { width:34px; min-width:34px; max-width:34px; padding:6px 0;
+  text-align:center; box-sizing:border-box; overflow:hidden; }
+#cvi-wrap .cvi-del i { margin:0; }
+#cvi-wrap .cvi-iconcell img { width:48px; height:48px; border-radius:6px;
+  background:#11161e; padding:3px; border:1px solid #2a323f; }
+#cvi-wrap .cvi-status { font-size:12px; color:#8993a4; margin-top:8px; }
+#cvi-wrap .cvi-msg { margin-top:10px; font-size:13px; display:none; border-radius:6px; padding:8px 12px; }
+#cvi-wrap .cvi-msg.ok { display:block; background:rgba(107,203,122,.15); color:#6bcb7a; }
+#cvi-wrap .cvi-msg.err { display:block; background:rgba(255,128,128,.15); color:#ff8080; }
+#cvi-wrap .cvi-rowbtns { display:flex; gap:6px; flex-wrap:wrap; }
+#cvi-wrap .pill { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+#cvi-wrap .pill.on { background:rgba(107,203,122,.15); color:#6bcb7a; }
+#cvi-wrap .pill.off { background:rgba(255,128,128,.15); color:#ff8080; }
+#cvi-wrap .cvi-uploadrow { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+#cvi-wrap input[type=file] { color:#d8dee9; max-width:100%; }
+@media (max-width:720px) {
+  #cvi-wrap th:nth-child(3), #cvi-wrap td:nth-child(3) { display:none; }
+}
+</style>
+
+<div id="cvi-wrap">
+  <div class="cvi-card">
+    <h3>Wgrywanie ikony VM</h3>
+    <p style="font-size:13px;color:#8993a4;margin:0 0 12px;">
+      Wgrane ikony trafiają do katalogu trwałego <b>/mnt/user/appdata/custom-vm-icons</b>
+      i są automatycznie kopiowane do VM Managera — pojawią się jako dodatkowe
+      ikony do wyboru przy tworzeniu/edycji VM. Obsługiwane: PNG, JPG (max 2 MB,
+      automatyczna konwersja do PNG 48x48).
+    </p>
+    <div class="cvi-uploadrow">
+      <input type="file" id="cvi-file" accept=".png,.jpg,.jpeg,image/png,image/jpeg">
+      <input type="text" id="cvi-name" placeholder="Nazwa (opcjonalnie, np. proxmox)">
+      <button class="cvi-btn primary" id="cvi-upload-btn">Wgraj ikonę</button>
+    </div>
+    <div class="cvi-msg" id="cvi-msg"></div>
+  </div>
+
+  <div class="cvi-card">
+    <h3>Zainstalowane ikony</h3>
+    <table>
+      <thead>
+        <tr><th>Ikona</th><th>Nazwa pliku</th><th>Rozmiar</th><th>W VM Managerze</th><th>Akcje</th></tr>
+      </thead>
+      <tbody id="cvi-tbody">
+        <tr><td colspan="5" style="color:#8993a4;">Ładowanie...</td></tr>
+      </tbody>
+    </table>
+    <div class="cvi-rowbtns" style="margin-top:12px;">
+      <button class="cvi-btn" id="cvi-sync-btn">Synchronizuj do VM Managera</button>
+      <button class="cvi-btn" id="cvi-restore-btn">Przywróć z appdata (brakujące)</button>
+    </div>
+    <div class="cvi-status" id="cvi-status"></div>
+  </div>
+</div>
+
+<script markdown="0">
+var CVI = {
+  token: <?=json_encode($csrfToken)?>,
+  api: '/plugins/custom-vm-icons/include/VMIconsAjax.php',
+
+  msg: function (text, ok) {
+    var el = document.getElementById('cvi-msg');
+    el.textContent = text;
+    el.className = 'cvi-msg ' + (ok ? 'ok' : 'err');
+  },
+
+  // wzorzec supla-pwr-unraid: JSON body + X-Csrf-Token naglowek
+  post: function (payload) {
+    var opts = {
+      method: 'POST',
+      headers: { 'X-Csrf-Token': CVI.token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    };
+    return fetch(CVI.api, opts).then(function (r) {
+      return r.text().then(function (text) {
+        if (!text) {
+          throw new Error('Pusta odpowiedź serwera (HTTP ' + r.status + '). Sesja WebGUI mogła wygasnąć — odśwież stronę.');
+        }
+        var j;
+        try { j = JSON.parse(text); }
+        catch (e) {
+          if (text.trim().charAt(0) === '<') {
+            throw new Error('Serwer zwrócił HTML zamiast JSON (HTTP ' + r.status + ') — wygasła sesja? Odśwież stronę.');
+          }
+          throw new Error('Nieprawidłowa odpowiedź: ' + text.slice(0, 200));
+        }
+        return j;
+      });
+    });
+  },
+
+  iconUrl: function (name) {
+    return '/boot/config/plugins/dynamix.vm.manager/templates/images/' + encodeURIComponent(name) + '?v=' + Date.now();
+  },
+
+  render: function (icons) {
+    var tb = document.getElementById('cvi-tbody');
+    tb.innerHTML = '';
+    if (!icons.length) {
+      tb.innerHTML = '<tr><td colspan="5" style="color:#8993a4;">Brak wgranych ikon.</td></tr>';
+      return;
+    }
+    icons.forEach(function (ic) {
+      var tr = document.createElement('tr');
+      var td1 = document.createElement('td'); td1.className = 'cvi-iconcell';
+      var img = document.createElement('img');
+      if (ic.inBoot) img.src = CVI.iconUrl(ic.name); else img.alt = 'brak';
+      td1.appendChild(img);
+      var td2 = document.createElement('td'); td2.textContent = ic.name;
+      var td3 = document.createElement('td'); td3.textContent = ic.size;
+      var td4 = document.createElement('td');
+      var pill = document.createElement('span');
+      pill.className = 'pill ' + (ic.inBoot ? 'on' : 'off');
+      pill.textContent = ic.inBoot ? 'aktywna' : 'brak w /boot';
+      td4.appendChild(pill);
+      var td5 = document.createElement('td');
+      var del = document.createElement('button');
+      del.className = 'cvi-btn del cvi-del';
+      del.title = 'Usuń';
+      del.setAttribute('aria-label', 'Usuń ' + ic.name);
+      var ico = document.createElement('i');
+      ico.className = 'fa fa-trash';
+      del.appendChild(ico);
+      del.onclick = function () {
+        if (!confirm('Usunąć ikonę ' + ic.name + ' z appdata i VM Managera?')) return;
+        CVI.post({ action: 'delete', name: ic.name }).then(function (j) {
+          CVI.msg(j.ok ? 'Usunięto ' + ic.name : (j.error || 'Błąd'), !!j.ok);
+          CVI.load();
+        }).catch(function (e) { CVI.msg(e.message, false); });
+      };
+      td5.appendChild(del);
+      [td1, td2, td3, td4, td5].forEach(function (td) { tr.appendChild(td); });
+      tb.appendChild(tr);
+    });
+  },
+
+  load: function () {
+    CVI.post({ action: 'list' }).then(function (j) {
+      if (!j.ok) throw new Error(j.error || 'Błąd');
+      CVI.render(j.icons || []);
+      document.getElementById('cvi-status').textContent =
+        (j.bootCount|0) + ' ikon w VM Managerze (/boot), ' +
+        (j.appdataCount|0) + ' w appdata. Katalog trwały: /mnt/user/appdata/custom-vm-icons';
+    }).catch(function (e) {
+      document.getElementById('cvi-tbody').innerHTML =
+        '<tr><td colspan="5" style="color:#ff8080;">' + e.message + '</td></tr>';
+    });
+  },
+
+  upload: function () {
+    var f = document.getElementById('cvi-file').files[0];
+    if (!f) { CVI.msg('Wybierz plik PNG/JPG.', false); return; }
+    if (f.size > 2 * 1024 * 1024) { CVI.msg('Plik większy niż 2 MB.', false); return; }
+    var nm = document.getElementById('cvi-name').value.trim();
+    var btn = document.getElementById('cvi-upload-btn');
+    btn.disabled = true; btn.textContent = 'Wgrywanie...';
+    var reader = new FileReader();
+    reader.onload = function () {
+      // dataURL: "data:image/png;base64,...." -> sam base64
+      var b64 = String(reader.result).split(',')[1] || '';
+      var payload = { action: 'upload', data: b64, origname: f.name };
+      if (nm) payload.name = nm;
+      CVI.post(payload).then(function (j) {
+        CVI.msg(j.ok ? ('Wgrano: ' + j.name + ' — dostępna w VM Managerze przy edycji VM') : (j.error || 'Błąd'), !!j.ok);
+        if (j.ok) {
+          document.getElementById('cvi-file').value = '';
+          document.getElementById('cvi-name').value = '';
+        }
+        CVI.load();
+      }).catch(function (e) { CVI.msg(e.message, false); })
+      .then(function () { btn.disabled = false; btn.textContent = 'Wgraj ikonę'; });
+    };
+    reader.onerror = function () {
+      CVI.msg('Nie udało się odczytać pliku.', false);
+      btn.disabled = false; btn.textContent = 'Wgraj ikonę';
+    };
+    reader.readAsDataURL(f);
+  }
+};
+
+document.getElementById('cvi-upload-btn').onclick = CVI.upload;
+document.getElementById('cvi-sync-btn').onclick = function () {
+  CVI.post({ action: 'sync' }).then(function (j) {
+    CVI.msg(j.ok ? ('Zsynchronizowano ' + (j.copied|0) + ' ikon do VM Managera') : (j.error || 'Błąd'), !!j.ok);
+    CVI.load();
+  }).catch(function (e) { CVI.msg(e.message, false); });
+};
+document.getElementById('cvi-restore-btn').onclick = function () {
+  CVI.post({ action: 'restore' }).then(function (j) {
+    CVI.msg(j.ok ? ('Przywrócono ' + (j.copied|0) + ' brakujących ikon') : (j.error || 'Błąd'), !!j.ok);
+    CVI.load();
+  }).catch(function (e) { CVI.msg(e.message, false); });
+};
+CVI.load();
+</script>

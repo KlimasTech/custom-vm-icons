@@ -1,0 +1,8 @@
+<Plugin>
+  <Name>Custom VM Icons</Name>
+  <PluginURL>https://raw.githubusercontent.com/KlimasTech/custom-vm-icons/main/custom-vm-icons.plg</PluginURL>
+  <Support>https://github.com/KlimasTech/custom-vm-icons/issues</Support>
+  <Project>https://github.com/KlimasTech/custom-vm-icons</Project>
+  <Overview>Upload custom VM icons (PNG/JPG, auto-converted to 48x48 PNG) in the unRAID WebGUI. Icons are stored persistently in /mnt/user/appdata/custom-vm-icons and synced to the VM Manager icon directory at every boot, so they appear next to the built-in icons when creating or editing VMs.</Overview>
+  <Category>Tools:Utilities</Category>
+</Plugin>

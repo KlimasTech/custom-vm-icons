@@ -1,0 +1,4 @@
+releases/
+*.txz
+__pycache__/
+Thumbs.db
