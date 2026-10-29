@@ -2,11 +2,11 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name        "custom-vm-icons">
 <!ENTITY author      "KlimasTech">
-<!ENTITY version     "2026.10.29">
+<!ENTITY version     "2026.10.29a">
 <!ENTITY launch      "Settings/CustomVmIcons">
 <!ENTITY pluginURL   "https://raw.githubusercontent.com/KlimasTech/custom-vm-icons/main/custom-vm-icons.plg">
 <!ENTITY packageURL  "https://github.com/KlimasTech/custom-vm-icons/releases/download/&version;/custom-vm-icons-&version;.txz">
-<!ENTITY packageMD5  "7907d1805e92c12d33e4e6d530e93682">
+<!ENTITY packageMD5  "d1ac65775a5d49b8387a2f41bbe45a38">
 <!ENTITY pluginLOC   "/boot/config/plugins/&name;">
 <!ENTITY emhttpLOC   "/usr/local/emhttp/plugins/&name;">
 ]>
@@ -15,6 +15,9 @@
 
 <CHANGES>
 ### &version;
+- Dolaczono 7 domyslnych ikon (android, macos, mikrotik, ms-dos, omv, openwrt, proxmox) pobranych z unRAID Backup — seedowane do /mnt/user/appdata/custom-vm-icons przy instalacji, bez nadpisywania wlasnych ikon uzytkownika
+
+### 2026.10.29
 - Strona Plugins pokazuje teraz wlasciwa nazwe "Custom VM Icons" z opisem: dodano plik README.md do paczki (unRAID renderuje go jako naglowek/opis wtyczki na liscie)
 
 ### 2026.10.28

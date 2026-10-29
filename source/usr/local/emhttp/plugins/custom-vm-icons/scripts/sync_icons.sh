@@ -5,8 +5,21 @@
 APPDATA="/mnt/user/appdata/custom-vm-icons"
 BOOTDIR="/boot/config/plugins/dynamix.vm.manager/templates/images"
 LOG_TAG="custom-vm-icons"
+# domyslne ikony dolaczone do pluginu (seedowane do APPDATA przy instalacji,
+# tylko gdy uzytkownik nie wgral wlasnych o tej samej nazwie)
+SCRIPTDIR="$(dirname "$0")"
+DEFAULTS="$SCRIPTDIR/../defaults"
 
-mkdir -p "$BOOTDIR"
+mkdir -p "$APPDATA" "$BOOTDIR"
+
+# seed domyslnych ikon do katalogu trwalego (nie nadpisuj wlasnych)
+if [ -d "$DEFAULTS" ]; then
+  for d in "$DEFAULTS"/*.png; do
+    [ -f "$d" ] || continue
+    name="$(basename "$d")"
+    [ -f "$APPDATA/$name" ] || cp -f "$d" "$APPDATA/$name"
+  done
+fi
 
 if [ "$1" = "--boot" ]; then
   # czekaj max ~5 min na montaz /mnt/user (appdata)
