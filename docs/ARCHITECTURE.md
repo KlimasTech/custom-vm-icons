@@ -19,8 +19,8 @@
         - nginx: serwuje przez symlink /usr/local/emhttp/boot -> /boot
 
 [Start systemu]
-        /boot/config/go -> sync_icons.sh --boot (w tle)
-        |  czeka max ~5 min na zamontowanie /mnt/user
+        emhttp: event/disks_mounted -> sync_icons.sh --boot
+        |  (dyski i udziały /mnt/user są już zamontowane)
         |  kopiuje BRAKUJĄCE pliki appdata -> /boot
         v
         ikony przywrócone po restarcie
@@ -36,6 +36,10 @@ unRAID czyta ikony VM z `/boot/config/plugins/dynamix.vm.manager/templates/image
 
 `sync_icons.sh` kopiuje wyłącznie pliki, których brak w katalogu VM Managera — celowo: jeśli użytkownik nadpisze ikonę w appdata (np. nowszą wersją), plik na `/boot` jest odświeżany przez endpoint uploadu, a boot-sync nie zmienia nic przy restarcie. Pełną nadpisującą synchronizację robi przycisk „Synchronizuj do VM Managera".
 
+### Nic pod /mnt/user przed startem tablicy
+
+`/mnt/user` to punkt montowania shfs. Zanim tablica wystartuje, jest to zwykły katalog na rootfs (RAM). Jeśli coś utworzy w nim pliki (np. `mkdir -p /mnt/user/appdata/...` z `/boot/config/go` albo z instalacji pluginu przy starcie systemu, która odbywa się przed tablicą), `/mnt/user` nie jest pusty, gdy emhttp montuje na nim shfs, a pliki trafiają do RAM i zostają ukryte pod montowaniem. Inne pluginy widzą wtedy `/mnt/user/appdata` na rootfs. Dlatego `sync_icons.sh`, instalator i endpoint uploadu sprawdzają najpierw, czy `/mnt/user` jest zamontowane, a synchronizacja startowa działa z `event/disks_mounted`.
+
 ### Upload przez JSON+base64, nie multipart/form-data
 
 Na unRAID 7.3.2 multipart POST-y do php-fpm **wiszą bez odpowiedzi** (testowane również na oficjalnych endpointach systemu — to nie wina pluginu). Dlatego upload idzie wzorcem sprawdzonego pluginu supla-pwr-unraid: `fetch()` z JSON body (`{action, data, name, fit}`) i tokenem CSRF w nagłówku `X-Csrf-Token` — tak wymaga `local_prepend.php` unRAID, które przy JSON body widzi puste `$_POST` i czyta token z nagłówka.
@@ -50,7 +54,7 @@ unRAID wyświetla ikony VM w rozmiarze 48×48. Wgrywanie oryginalnych rozmiarów
 
 ### Bez patchowania plików systemowych
 
-Plugin nie modyfikuje żadnego pliku unRAID — dokłada tylko własne pliki w `/usr/local/emhttp/plugins/custom-vm-icons/` (te przeżywają reboot bez re-instalacji, bo `upgradepkg` pomija tę samą wersję) i jeden wpis startowy w `/boot/config/go`. Usunięcie pluginu przywraca system do stanu sprzed instalacji.
+Plugin nie modyfikuje żadnego pliku unRAID — dokłada tylko własne pliki w `/usr/local/emhttp/plugins/custom-vm-icons/` (te przeżywają reboot bez re-instalacji, bo `upgradepkg` pomija tę samą wersję) i zdarzenie startowe `event/disks_mounted` (część paczki). `/boot/config/go` nie jest modyfikowany. Usunięcie pluginu przywraca system do stanu sprzed instalacji.
 
 ### Bezpieczeństwo
 

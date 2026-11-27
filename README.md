@@ -20,7 +20,7 @@ Po instalacji: **Settings → Utilities → Custom VM Icons** → wybierz plik P
 |---|---|---|
 | Master copy ikon | `/mnt/user/appdata/custom-vm-icons/` | trwałe przechowywanie (udział appdata, przeżywa restart) |
 | Live copy ikon | `/boot/config/plugins/dynamix.vm.manager/templates/images/` | stąd unRAID czyta ikony do pickera VM (natywny mechanizm, bez patchowania systemu) |
-| Sync przy starcie | wpis w `/boot/config/go` → `scripts/sync_icons.sh --boot` | po zamontowaniu tablicy przywraca brakujące ikony z appdata do katalogu VM Managera |
+| Sync przy starcie | zdarzenie emhttp `event/disks_mounted` → `scripts/sync_icons.sh --boot` | po zamontowaniu dysków i udziałów `/mnt/user` przywraca brakujące ikony z appdata do katalogu VM Managera |
 | Strona ustawień | `Settings/CustomVmIcons` | upload, podgląd, usuwanie, ręczna synchronizacja |
 
 Upload obsługuje PNG i JPG (max 2 MB); obraz jest automatycznie konwertowany przez GD do PNG 48×48 z przezroczystym tłem. Tryb dopasowania: `crop` (kadrowanie ze środka) albo `contain` (cała grafika mieści się w kwadracie — domyślne dla szerokich logotypów).
