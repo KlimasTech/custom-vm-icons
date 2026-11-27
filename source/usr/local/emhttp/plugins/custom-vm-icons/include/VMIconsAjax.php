@@ -48,7 +48,17 @@ function cvi_input(): array {
     return is_array($in) ? $in : [];
 }
 
+// /mnt/user jest punktem montowania shfs. Gdy tablica nie dziala, to zwykly katalog na rootfs (RAM):
+// mkdir by sie "udal", ale katalog trafilby do RAM pod punkt montowania i zostal ukryty po starcie tablicy.
+function cvi_user_shares_mounted() {
+    $mounts = @file_get_contents('/proc/mounts');
+    return is_string($mounts) && preg_match('#^\S+ /mnt/user \S+ #m', $mounts) === 1;
+}
+
 function cvi_ensure_dirs() {
+    if (!cvi_user_shares_mounted()) {
+        cvi_json(['ok' => false, 'error' => 'Udzialy /mnt/user nie sa zamontowane - uruchom tablice (Main -> Array Start) i sprobuj ponownie.']);
+    }
     if (!is_dir(CVI_APPDATA) && !@mkdir(CVI_APPDATA, 0755, true)) {
         cvi_json(['ok' => false, 'error' => 'Nie mozna utworzyc ' . CVI_APPDATA . ' - zamontowana tablica?']);
     }

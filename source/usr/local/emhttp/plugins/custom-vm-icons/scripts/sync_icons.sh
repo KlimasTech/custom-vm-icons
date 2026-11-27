@@ -1,7 +1,11 @@
 #!/bin/bash
 # custom-vm-icons/scripts/sync_icons.sh
 # Synchronizuje ikony VM: /mnt/user/appdata/custom-vm-icons (trwale) -> /boot/.../templates/images
-# --boot : tryb startu systemu - czeka az tablica/appdata bedzie zamontowana, potem przywraca brakujace.
+# --boot : tryb startu systemu (wywolywany z event/disks_mounted) - przywraca tylko brakujace.
+#
+# Nic nie jest tworzone pod /mnt/user, dopoki /mnt/user nie jest zamontowane (shfs).
+# Wczesniej katalog powstawal na rootfs (RAM) przed startem tablicy, przez co /mnt/user
+# nie byl pusty, gdy emhttp montowal na nim shfs.
 APPDATA="/mnt/user/appdata/custom-vm-icons"
 BOOTDIR="/boot/config/plugins/dynamix.vm.manager/templates/images"
 LOG_TAG="custom-vm-icons"
@@ -9,6 +13,11 @@ LOG_TAG="custom-vm-icons"
 # tylko gdy uzytkownik nie wgral wlasnych o tej samej nazwie)
 SCRIPTDIR="$(dirname "$0")"
 DEFAULTS="$SCRIPTDIR/../defaults"
+
+if ! mountpoint -q /mnt/user 2>/dev/null; then
+  logger -t "$LOG_TAG" "/mnt/user nie jest zamontowane - pomijam synchronizacje"
+  exit 0
+fi
 
 mkdir -p "$APPDATA" "$BOOTDIR"
 
@@ -19,21 +28,6 @@ if [ -d "$DEFAULTS" ]; then
     name="$(basename "$d")"
     [ -f "$APPDATA/$name" ] || cp -f "$d" "$APPDATA/$name"
   done
-fi
-
-if [ "$1" = "--boot" ]; then
-  # czekaj max ~5 min na montaz /mnt/user (appdata)
-  i=0
-  while [ $i -lt 60 ]; do
-    if mountpoint -q /mnt/user 2>/dev/null && [ -d "$APPDATA" ]; then break; fi
-    sleep 5
-    i=$((i+1))
-  done
-fi
-
-if [ ! -d "$APPDATA" ]; then
-  [ "$1" = "--boot" ] && logger -t "$LOG_TAG" "katalog $APPDATA niedostepny - pomijam synchronizacje"
-  exit 0
 fi
 
 copied=0

@@ -11,9 +11,9 @@
 
 3. Kliknij **Install**. Instalator:
    - zainstaluje paczkę do `/usr/local/emhttp/plugins/custom-vm-icons/`,
-   - utworzy katalogi `/mnt/user/appdata/custom-vm-icons` oraz katalog ikon VM Managera na `/boot`,
-   - doda wpis synchronizacji przy starcie do `/boot/config/go`,
-   - przywróci brakujące ikony (jeśli tablica jest zamontowana).
+   - utworzy katalog ikon VM Managera na `/boot`,
+   - zarejestruje synchronizację przy starcie jako zdarzenie emhttp `event/disks_mounted` (bez wpisu w `/boot/config/go`; stary wpis z wersji ≤ 2026.10.29a zostanie usunięty),
+   - jeśli tablica działa: utworzy `/mnt/user/appdata/custom-vm-icons` i przywróci brakujące ikony. Przy zatrzymanej tablicy nic nie jest zapisywane pod `/mnt/user` — zrobi to zdarzenie po starcie tablicy.
 4. Gotowe — strona zarządzania: **Settings → Utilities → Custom VM Icons**.
 
 ## Instalacja ręczna (krok po kroku)
@@ -33,13 +33,11 @@ Jeśli nie chcesz instalować z URL (np. serwer bez dostępu do internetu):
    upgradepkg --install-new /boot/config/plugins/custom-vm-icons/custom-vm-icons-*.txz
    ```
 
-4. Utwórz katalogi i zarejestruj sync przy starcie:
+4. Przy uruchomionej tablicy wykonaj pierwszą synchronizację (sync przy kolejnych startach robi zdarzenie `event/disks_mounted` z paczki — nie dopisuj niczego do `/boot/config/go`):
 
    ```bash
-   mkdir -p /mnt/user/appdata/custom-vm-icons /boot/config/plugins/dynamix.vm.manager/templates/images
-   chmod +x /usr/local/emhttp/plugins/custom-vm-icons/scripts/sync_icons.sh
-   grep -q custom-vm-icons /boot/config/go || \
-     sed -i '/\/usr\/local\/sbin\/emhttp/i ( /usr/local/emhttp/plugins/custom-vm-icons/scripts/sync_icons.sh --boot 2>\&1 ) \&' /boot/config/go
+   chmod +x /usr/local/emhttp/plugins/custom-vm-icons/scripts/sync_icons.sh /usr/local/emhttp/plugins/custom-vm-icons/event/disks_mounted
+   /usr/local/emhttp/plugins/custom-vm-icons/scripts/sync_icons.sh --boot
    ```
 
 5. Odśwież WebGUI — strona pluginu pojawi się w **Settings → Utilities**.
@@ -57,4 +55,4 @@ Zainstaluj nową wersję przez **Plugins → Install Plugin** (ten sam URL) — 
 
 ## Usunięcie
 
-**Plugins → Installed Plugins → custom-vm-icons → Remove**. Plugin usunie swój wpis z `/boot/config/go`; wgrane ikony **pozostają** w `/mnt/user/appdata/custom-vm-icons` i w katalogu ikon VM Managera (usuń je ręcznie, jeśli nie są już potrzebne).
+**Plugins → Installed Plugins → custom-vm-icons → Remove**. Plugin usunie ewentualny stary wpis z `/boot/config/go`; wgrane ikony **pozostają** w `/mnt/user/appdata/custom-vm-icons` i w katalogu ikon VM Managera (usuń je ręcznie, jeśli nie są już potrzebne).

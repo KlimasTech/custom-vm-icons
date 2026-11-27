@@ -2,11 +2,11 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name        "custom-vm-icons">
 <!ENTITY author      "KlimasTech">
-<!ENTITY version     "2026.10.29a">
+<!ENTITY version     "2026.11.27">
 <!ENTITY launch      "Settings/CustomVmIcons">
 <!ENTITY pluginURL   "https://raw.githubusercontent.com/KlimasTech/custom-vm-icons/main/custom-vm-icons.plg">
 <!ENTITY packageURL  "https://github.com/KlimasTech/custom-vm-icons/releases/download/&version;/custom-vm-icons-&version;.txz">
-<!ENTITY packageMD5  "d1ac65775a5d49b8387a2f41bbe45a38">
+<!ENTITY packageMD5  "53c6f4ef1da817dd86101b9b7d61bfe5">
 <!ENTITY pluginLOC   "/boot/config/plugins/&name;">
 <!ENTITY emhttpLOC   "/usr/local/emhttp/plugins/&name;">
 ]>
@@ -14,7 +14,13 @@
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" icon="fa-picture-o">
 
 <CHANGES>
-### &version;
+### 2026.11.27
+- Poprawka startu systemu: plugin nie tworzy juz /mnt/user/appdata/custom-vm-icons na rootfs przed startem tablicy (katalog w pustym jeszcze /mnt/user psul montowanie udzialow shfs i inne pluginy korzystajace z appdata)
+- Synchronizacja przy starcie przez zdarzenie emhttp event/disks_mounted zamiast wpisu w /boot/config/go; stary wpis jest usuwany przy aktualizacji
+- sync_icons.sh i endpoint uploadu nic nie zapisuja pod /mnt/user, gdy udzialy nie sa zamontowane
+- Instalacja przy starcie systemu nie czeka juz do 5 minut na tablice
+
+### 2026.10.29a
 - Dolaczono 7 domyslnych ikon (android, macos, mikrotik, ms-dos, omv, openwrt, proxmox) pobranych z unRAID Backup — seedowane do /mnt/user/appdata/custom-vm-icons przy instalacji, bez nadpisywania wlasnych ikon uzytkownika
 
 ### 2026.10.29
@@ -42,19 +48,21 @@ rm -f $(ls &pluginLOC;/*.txz 2>/dev/null)
 <MD5>&packageMD5;</MD5>
 </FILE>
 
-<!-- POST-INSTALL: katalogi + rejestracja synchronizacji przy starcie -->
+<!-- POST-INSTALL: katalog VM Managera + synchronizacja (tylko przy zamontowanym /mnt/user) -->
 <FILE Run="/bin/bash">
 <INLINE>
-mkdir -p /mnt/user/appdata/custom-vm-icons
 mkdir -p /boot/config/plugins/dynamix.vm.manager/templates/images
-chmod +x &emhttpLOC;/scripts/sync_icons.sh
-GO_FILE="/boot/config/go"
-MARKER="custom-vm-icons/scripts/sync_icons.sh"
-if ! grep -q "$MARKER" "$GO_FILE" 2>/dev/null; then
-  sed -i "/\/usr\/local\/sbin\/emhttp/i ( /usr/local/emhttp/plugins/custom-vm-icons/scripts/sync_icons.sh --boot 2&gt;&amp;1 ) &amp;" "$GO_FILE"
+chmod +x &emhttpLOC;/scripts/sync_icons.sh &emhttpLOC;/event/disks_mounted
+# starsze wersje dopisywaly sync do /boot/config/go (uruchamial sie przed startem tablicy);
+# teraz robi to event/disks_mounted, wiec usun stary wpis (zapis na flash tylko gdy wpis istnieje)
+if grep -q 'custom-vm-icons/scripts/sync_icons.sh' /boot/config/go 2>/dev/null; then
+  sed -i '/custom-vm-icons\/scripts\/sync_icons.sh/d' /boot/config/go
 fi
-# przywroc brakujace ikony juz teraz (jesli tablica zamontowana)
-bash &emhttpLOC;/scripts/sync_icons.sh --boot || true
+# przywroc brakujace ikony juz teraz - tylko gdy udzialy sa zamontowane
+# (przy starcie systemu plugin instaluje sie przed tablica; wtedy zrobi to event/disks_mounted)
+if mountpoint -q /mnt/user; then
+  bash &emhttpLOC;/scripts/sync_icons.sh --boot || true
+fi
 echo ""
 echo "-------------------------------------------"
 echo " custom-vm-icons &version; zainstalowany."

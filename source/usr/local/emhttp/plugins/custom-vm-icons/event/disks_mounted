@@ -1,0 +1,4 @@
+#!/bin/bash
+# emhttp uruchamia ten skrypt po zamontowaniu dyskow i udzialow uzytkownika (/mnt/user),
+# przy kazdym starcie tablicy. Zastepuje wpis w /boot/config/go.
+/usr/local/emhttp/plugins/custom-vm-icons/scripts/sync_icons.sh --boot

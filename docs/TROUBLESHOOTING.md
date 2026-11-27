@@ -2,9 +2,9 @@
 
 | Objaw | Przyczyna | Rozwiązanie |
 |---|---|---|
-| Upload zwraca błąd „Nie można utworzyć /mnt/user/appdata/..." | tablica nie jest zamontowana | zamontuj tablicę (**Main → Array Start**), potem ponów upload |
+| Upload zwraca błąd „Udziały /mnt/user nie są zamontowane" lub „Nie można utworzyć /mnt/user/appdata/..." | tablica nie jest zamontowana | zamontuj tablicę (**Main → Array Start**), potem ponów upload |
 | Ikona wgrana, ale nie widać jej w pickerze VM | kopia na `/boot` się nie zapisała | na stronie pluginu kliknij **Synchronizuj do VM Managera**; sprawdź status „aktywna" przy ikonie |
-| Po restarcie zniknęły ikony z pickera | brak wpisu w `/boot/config/go` lub sync wystartował przed zamontowaniem tablicy | sprawdź `grep custom-vm-icons /boot/config/go`; kliknij **Przywróć z appdata (brakujące)** |
+| Po restarcie zniknęły ikony z pickera | zdarzenie `disks_mounted` nie uruchomiło synchronizacji | sprawdź `grep custom-vm-icons /var/log/syslog` i czy istnieje `/usr/local/emhttp/plugins/custom-vm-icons/event/disks_mounted`; kliknij **Przywróć z appdata (brakujące)** |
 | „Serwer zwrócił HTML zamiast JSON" | wygasła sesja WebGUI | odśwież stronę i zaloguj się ponownie |
 | „Pusta odpowiedź serwera (HTTP ...)" | endpoint nieosiągalny / błąd PHP | sprawdź `tail /var/log/phplog`; zweryfikuj że plik `include/VMIconsAjax.php` istnieje |
 | Ikona jest „przycięta" (dotyka krawędzi) | grafika źródłowa bez marginesu + tryb `crop`/`contain` na styk | wgraj ponownie z marginesem ~7% wokół treści |
@@ -27,6 +27,7 @@ ls -la /mnt/user/appdata/custom-vm-icons/
 # ręczny sync (tylko brakujące):
 /usr/local/emhttp/plugins/custom-vm-icons/scripts/sync_icons.sh --boot
 
-# wpis startowy:
-grep custom-vm-icons /boot/config/go
+# zdarzenie startowe (od 2026.11.27; w /boot/config/go nie powinno byc wpisu):
+ls -l /usr/local/emhttp/plugins/custom-vm-icons/event/disks_mounted
+grep custom-vm-icons /boot/config/go   # powinno nic nie zwrocic
 ```
